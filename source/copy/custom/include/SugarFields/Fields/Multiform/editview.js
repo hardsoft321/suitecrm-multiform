@@ -30,7 +30,7 @@ function deleteItem(item) {
     }
     item
     .find('.item-fields, .item-buttons').remove().end()
-    .append($('<input type="hidden" name="'+module+'['+beanId+'][item_deleted]" value="1">'))
+    .append($('<input type="hidden" class="item_deleted" name="'+module+'['+beanId+'][item_deleted]" value="1">'))
     .append($('<p class="del-message">').text('Запись будет удалена при сохранении формы.'))
 }
 

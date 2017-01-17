@@ -168,9 +168,14 @@ class SugarFieldMultiform
 
             if(!empty($itemPost['item_deleted'])) {
                 if(!empty($controller->bean->id)) {
-                    $_REQUEST['record'] = $controller->bean->id;
-                    $controller->action_delete();
-                    $_REQUEST['record'] = '';
+                    //$_REQUEST['record'] = $controller->bean->id;
+                    //$controller->action_delete(); //action_delete is protected method
+                    if(!$controller->bean->ACLAccess('Delete')){
+                        ACLController::displayNoAccess(true);
+                        sugar_cleanup(true);
+                    }
+                    $controller->bean->mark_deleted($controller->bean->id);
+                    //$_REQUEST['record'] = '';
                 }
             }
             else {

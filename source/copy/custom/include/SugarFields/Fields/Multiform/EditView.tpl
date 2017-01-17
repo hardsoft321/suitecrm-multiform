@@ -66,6 +66,14 @@ if(!lab321) var lab321 = {};
 if(!lab321.multiform) lab321.multiform = {};
 lab321.multiform[module] = {};
 
+var set_return_orig = set_return; //TODO: выводить item форму с правильным form_name в open_popup
+set_return = function(popup_reply_data) {
+    if(popup_reply_data.form_name == 'EditView') {
+        popup_reply_data.form_name = formname;
+    }
+    set_return_orig(popup_reply_data);
+}
+
 var templatePanelId = module + "_template";
 SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm != \'undefined\' && typeof validate['"+formname+"'] != \'undefined\' && validate['"+formname+"'].length > 0", function() {
     updateNames();
@@ -73,7 +81,9 @@ SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm !=
     initEditForm();
 
     addToValidateCallback(formname, 'multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {
-        return $('.multiform.'+module+' .editlistitem').not('.item_template').length;
+        return $('.multiform.'+module+' .editlistitem').not('.item_template').filter(function(i, v) {
+            return $(v).find('.item_deleted').length == 0
+        }).length;
     });
 
     lab321.multiform[module].ready = true;
