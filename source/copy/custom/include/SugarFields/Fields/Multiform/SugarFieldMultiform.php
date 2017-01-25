@@ -55,6 +55,7 @@ class SugarFieldMultiform
         $forms = array();
         $isDuplicate = isset($_REQUEST['isDuplicate']) && $_REQUEST['isDuplicate'] == "true";
         $count = 0;
+        //существующие записи
         foreach($itemBeans as $bean) {
             $view = ViewFactory::loadView('editpartial', $bean->module_name, $bean);
             $view->init($bean);
@@ -86,6 +87,7 @@ class SugarFieldMultiform
                 $_REQUEST = array_merge($origRequest, $itemPost);
 
                 $controller->bean = BeanFactory::newBean($itemsModule);
+                $controller->bean->parentAclChecked = true;
                 $controller->pre_save();
                 $controller->bean->id = '';
 
@@ -106,6 +108,7 @@ class SugarFieldMultiform
 
         unset($_POST);
         unset($_REQUEST);
+        //шаблон
         $bean = BeanFactory::newBean($itemsModule);
         $view = ViewFactory::loadView('editpartial', $bean->module_name, $bean);
         $view->init($bean);
