@@ -3,7 +3,7 @@
  * @author Evgeny Pervushin <pea@lab321.ru>
  *}
 
-<div class="multiform {$items_module}">
+<div class="multiform {$items_module} {if $field_defs.mode == 'single'}mode-single{/if}">
 
 {literal}
 <style>
@@ -11,8 +11,10 @@
 .item-buttons{text-align:right; padding: 3px 0;float:right;
     top: 20px; position: relative;}
 .del-message {color: red;}
+.bottom-links {margin-top: 10px;}
 .edit tr td .multiform table.edit.view tr td {padding: 3px !important;}
 .edit tr td .multiform table.edit.view {padding-top: 20px !important;}
+.edit tr td .multiform.mode-single .bean-new table.edit.view {padding-top: 3px !important;}
 </style>
 {/literal}
 
@@ -20,7 +22,7 @@
 <div class="multiform_validation"><input type="hidden" name="multiform_validation" value="1" /></div>
 
 {foreach from=$forms key="bean_id" item="item"}
-<div class="editlistitem">
+<div class="editlistitem {if !empty($item.bean_id)}bean-id{else}bean-new{/if}">
     {if !empty($item.bean_id)}
     <input type="hidden" name="item_record" class="item_record" value="{$item.bean_id}">
     {/if}
@@ -30,9 +32,13 @@
         {if $is_admin}
         <a href='index.php?module={$items_module}&action=DetailView&record={$item.bean_id}'>Просмотр</a>
         {/if}
+        {if $isAuditEnabled}
         <a href='javascript:void(0)' onclick='open_popup("Audit", "600", "400", "&record={$item.bean_id}&module_name={$items_module}", true, false, {ldelim}call_back_function: set_return, form_name: "EditView", field_to_name_array: []{rdelim});'>{sugar_translate label="LNK_VIEW_CHANGE_LOG"}</a>
         {/if}
+        {/if}
+        {if $field_defs.mode != 'single'}
         <a href="#" onclick="deleteItem($(this).closest('.editlistitem'));return false;" class="abutton remove_item_button">&times; Удалить</a>
+        {/if}
     </div>
     <div class="item-fields">
         {$item.form}
@@ -51,20 +57,22 @@
 </div>
 </div>
 
+{if $field_defs.mode != 'single'}
 <div class="bottom-links edit">
-    <input type="button" class="add_item" onclick="cloneItem($('#{$items_module}_template'))" value="+ Добавить Кредитный продукт">
+    <input type="button" class="add_item" onclick="cloneItem($('#{$items_module}_template'))" value="+ Добавить {sugar_translate label="LBL_OBJECT_NAME" module=$items_module}">
 </div>
+{/if}
 
 {sugar_getscript file="custom/include/SugarFields/Fields/Multiform/editview.js"}
 <script>
-var module = "{$items_module}";
+var items_module = "{$items_module}";
 var formname = "{$form_name}";
 {literal}
-validate[formname+'_'+module] = validate['EditView'];
+validate[formname+'_'+items_module] = validate['EditView'];
 validate[formname] = [];
 if(!lab321) var lab321 = {};
 if(!lab321.multiform) lab321.multiform = {};
-lab321.multiform[module] = {};
+lab321.multiform[items_module] = {};
 
 var set_return_orig = set_return; //TODO: выводить item форму с правильным form_name в open_popup
 set_return = function(popup_reply_data) {
@@ -74,19 +82,25 @@ set_return = function(popup_reply_data) {
     set_return_orig(popup_reply_data);
 }
 
-var templatePanelId = module + "_template";
+var templatePanelId = items_module + "_template";
 SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm != \'undefined\' && typeof validate['"+formname+"'] != \'undefined\' && validate['"+formname+"'].length > 0", function() {
     updateNames();
 
     initEditForm();
 
+{/literal}
+{if $field_defs.required}
+{literal}
     addToValidateCallback(formname, 'multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {
-        return $('.multiform.'+module+' .editlistitem').not('.item_template').filter(function(i, v) {
+        return $('.multiform.'+items_module+' .editlistitem').not('.item_template').filter(function(i, v) {
             return $(v).find('.item_deleted').length == 0
         }).length;
     });
+{/literal}
+{/if}
+{literal}
 
-    lab321.multiform[module].ready = true;
+    lab321.multiform[items_module].ready = true;
 });
 {/literal}
 </script>

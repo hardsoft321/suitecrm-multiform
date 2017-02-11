@@ -30,7 +30,7 @@ function deleteItem(item) {
     }
     item
     .find('.item-fields, .item-buttons').remove().end()
-    .append($('<input type="hidden" class="item_deleted" name="'+module+'['+beanId+'][item_deleted]" value="1">'))
+    .append($('<input type="hidden" class="item_deleted" name="'+items_module+'['+beanId+'][item_deleted]" value="1">'))
     .append($('<p class="del-message">').text('Запись будет удалена при сохранении формы.'))
 }
 
@@ -43,11 +43,11 @@ function updateNames() {
         var localCurrencyFields = [];
         $(this).find('[name]').each(function() {
             var name = this.name;
-            this.name = module+'['+beanId+']['+this.name+']';
+            this.name = items_module+'['+beanId+']['+this.name+']';
             this.id = this.name;
 
             if(beanId != 'template') {
-                var validator = findValidator(formname+'_'+module, name);
+                var validator = findValidator(formname+'_'+items_module, name);
                 if(validator) {
                     var newValidator = $.extend({}, validator);
                     newValidator[nameIndex] = this.name;
@@ -62,12 +62,12 @@ function updateNames() {
             var onclick = $(this).attr('onclick');
             if(onclick && name.match(/btn_clr_.*/)) {
                 $(this).attr('onclick', onclick.replace(/SUGAR\.clearRelateField\(this\.form,\s*'([^']+)',\s*'([^']+)'\)/, function(str, name, id) {
-                    return "SUGAR.clearRelateField(this.form, '"+module+'['+beanId+']['+name+']'+"', '"+module+'['+beanId+']['+id+']'+"')";
+                    return "SUGAR.clearRelateField(this.form, '"+items_module+'['+beanId+']['+name+']'+"', '"+items_module+'['+beanId+']['+id+']'+"')";
                 }));
             }
             else if(onclick && name.match(/btn_.*/)) {
                 $(this).attr('onclick', onclick.replace(/"field_to_name_array":{"id":"([^"]+)","name":"([^"]+)"}/, function(str, id, name) {
-                    return '"field_to_name_array":{"id":"'+module+'['+beanId+']['+id+']'+'","name":"'+module+'['+beanId+']['+name+']"}';
+                    return '"field_to_name_array":{"id":"'+items_module+'['+beanId+']['+id+']'+'","name":"'+items_module+'['+beanId+']['+name+']"}';
                 }));
             }
 
@@ -89,7 +89,7 @@ function updateNames() {
             }
         }).end()
         .find('[data-relate]').each(function(){ //для поля SumInWords
-            $(this).attr('data-relate', module+'['+beanId+']['+$(this).attr('data-relate')+']');
+            $(this).attr('data-relate', items_module+'['+beanId+']['+$(this).attr('data-relate')+']');
         }).end()
         .data('currencyfields', localCurrencyFields)
     })
@@ -129,13 +129,13 @@ function cloneItem(item) {
     newItem.removeClass('item_template')
     .find('[name]').each(function() {
         var name = this.name;
-        this.name = this.name.replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']');
+        this.name = this.name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
 
         var fieldName = '';
-        var matches = name.match(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[(.+)\\]'));
+        var matches = name.match(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[(.+)\\]'));
         if(matches) {
             fieldName = matches[5];
-            var validator = findValidator(formname+'_'+module, fieldName);
+            var validator = findValidator(formname+'_'+items_module, fieldName);
             if(validator) {
                 var newValidator = $.extend({}, validator);
                 newValidator[nameIndex] = this.name;
@@ -152,15 +152,15 @@ function cloneItem(item) {
         var onclick = $(this).attr('onclick');
         if(onclick && name.match(/\[btn_clr_.*\]/)) {
             $(this).attr('onclick', onclick.replace(/SUGAR\.clearRelateField\(this\.form,\s*'([^']+)',\s*'([^']+)'\)/, function(str, name, id) {
-                name = name.replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']');
-                id = id.replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']');
+                name = name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
+                id = id.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
                 return "SUGAR.clearRelateField(this.form, '"+name+"', '"+id+"')";
             }));
         }
         else if(onclick && name.match(/\[btn_.*\]/)) {
             $(this).attr('onclick', onclick.replace(/"field_to_name_array":{"id":"([^"]+)","name":"([^"]+)"}/, function(str, id, name) {
-                name = name.replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']');
-                id = id.replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']');
+                name = name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
+                id = id.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
                 return '"field_to_name_array":{"id":"'+id+'","name":"'+name+'"}';
             }));
         }
@@ -180,7 +180,7 @@ function cloneItem(item) {
     })
     .end()
     .find('[data-relate]').each(function(){ //для поля SumInWords
-        $(this).attr('data-relate', $(this).attr('data-relate').replace(new RegExp(module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), module+'[new'+newId+']'));
+        $(this).attr('data-relate', $(this).attr('data-relate').replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']'));
     })
     .end()
     .find('div[id^="detailpanel_"]').attr('id', 'detailpanel_'+newId)

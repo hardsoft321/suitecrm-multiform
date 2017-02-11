@@ -10,14 +10,14 @@ class ViewEditPartial extends SugarView
 {
     public $type = 'editpartial';
     public $showTitle = false;
-    public $view = 'EditPartial';
+    public $view = 'EditView';
 
     function preDisplay()
     {
         $metadataFile = $this->getMetaDataFile();
 
         $this->ev = new EditView();
-        $this->ev->view = 'EditView';
+        $this->ev->view = $this->view;
         $this->ev->ss =& $this->ss;
         $this->ev->setup($this->module, $this->bean, $metadataFile, get_custom_file_if_exists('include/EditView/EditView.tpl'));
     }
