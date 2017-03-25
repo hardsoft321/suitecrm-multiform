@@ -69,7 +69,7 @@
 var items_module = "{$items_module}";
 var formname = "{$form_name}";
 {literal}
-validate[formname+'_'+items_module] = validate['EditView'];
+validate[formname+'_'+items_module] = validate['formQuickCreatePartial'];
 validate[formname] = [];
 if(!lab321) var lab321 = {};
 if(!lab321.multiform) lab321.multiform = {};

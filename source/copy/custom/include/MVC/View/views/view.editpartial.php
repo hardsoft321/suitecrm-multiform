@@ -29,6 +29,9 @@ class ViewEditPartial extends SugarView
 
     function display()
     {
+        $this->ev->formName = 'formQuickCreatePartial'; // Для отдельного файла в кэше
+                                                        // Должно содержать QuickCreate не сначала для валидации в TemplateHandler::buildTemplate
+                                                        // См. еще Multiform/EditView.tpl
         $this->ev->process();
         echo $this->ev->display($this->showTitle);
     }
