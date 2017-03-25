@@ -37,7 +37,9 @@ class SugarFieldMultiform
     protected static function getBeans($parentBean, $field)
     {
         if(empty($parentBean->field_defs[$field]['link']) || ! $parentBean->load_relationship($parentBean->field_defs[$field]['link'])) {
-            $GLOBALS['log']->error("SugarFieldMultiform: No link for {$parentBean->module_dir} {$field}");
+            if(!isset($parentBean->field_defs[$field]['link_manual'])) {
+                $GLOBALS['log']->error("SugarFieldMultiform: No link for {$parentBean->module_dir} {$field}");
+            }
             return array();
         }
         static $cache = array();
@@ -93,8 +95,8 @@ class SugarFieldMultiform
             );
         }
 
-        $origPost = $_POST;
-        $origRequest = $_REQUEST;
+        $origPost = isset($_POST) ? $_POST : array();
+        $origRequest = isset($_REQUEST) ? $_REQUEST : array();
         // Заполнение при переходе в полную форму из формы быстрого создания
         if(!empty($_REQUEST[$itemsModule])) {
             $itemsPost = $_REQUEST[$itemsModule];
@@ -221,6 +223,7 @@ class SugarFieldMultiform
             else {
                 $controller->pre_save();
                 $controller->bean->notify_on_save = false;
+                //TODO: $_REQUEST['module'] = $itemsModule; //для наследования групп в SecurityGroups/AssignGroups.php
                 $controller->action_save();
                 $beans[] = $controller->bean;
             }

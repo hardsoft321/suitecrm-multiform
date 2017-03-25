@@ -20,6 +20,11 @@ class ViewEditPartial extends SugarView
         $this->ev->view = $this->view;
         $this->ev->ss =& $this->ss;
         $this->ev->setup($this->module, $this->bean, $metadataFile, get_custom_file_if_exists('include/EditView/EditView.tpl'));
+
+        if(!$metadataFile) {
+            $this->ev->defs['templateMeta']['form']['headerTpl'] = 'custom/include/SugarFields/Fields/Multiform/empty.tpl';
+            $this->ev->defs['templateMeta']['form']['footerTpl'] = 'custom/include/SugarFields/Fields/Multiform/empty.tpl';
+        }
     }
 
     function display()

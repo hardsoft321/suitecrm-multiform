@@ -1,10 +1,10 @@
 /**
  * @license http://hardsoft321.org/license/ GPLv3
  * @author Evgeny Pervushin <pea@lab321.ru>
- * @author Timur Rakhimzhanov <metall.live@gmail.com>
  */
 
-function initEditForm() {
+function initEditForm(items_module) {
+    var templatePanelId = items_module + "_template";
     if(!$('form[name="'+formname+'"]').length) {
         formname = $('#'+templatePanelId).closest('form').attr('name') || 'EditView';
     }
@@ -23,6 +23,7 @@ function initEditForm() {
 }
 
 function deleteItem(item) {
+    var items_module = item.closest('.multiform').attr('data-itemsmodule');
     var beanId = item.find('.item_record').val();
     if(!beanId) {
         item.remove();
@@ -35,15 +36,16 @@ function deleteItem(item) {
 }
 
 //TODO: code duplication
-function updateNames() {
-    $('.editlistitem').each(function() {
+function updateNames(items_module) {
+    $('.editlistitem', '.multiform.'+items_module).each(function() {
         var self = this;
         var beanId = $(this).find('[name="item_key"]').val() || 'template';
         var hasLocalCurrencySelect = $(this).find('#currency_id_span').length > 0;
         var localCurrencyFields = [];
         $(this).find('[name]').each(function() {
-            var name = this.name;
-            this.name = items_module+'['+beanId+']['+this.name+']';
+            var isMultiselect = this.name.slice(-2) == '[]';
+            var name = isMultiselect ? this.name.slice(0, this.name.length - 2) : this.name;
+            this.name = items_module+'['+beanId+']['+name+']' + (isMultiselect ? '[]' : '');
             this.id = this.name;
 
             if(beanId != 'template') {
@@ -93,36 +95,28 @@ function updateNames() {
         }).end()
         .data('currencyfields', localCurrencyFields)
     })
-    updateDateFields();
 }
 
-function updateDateFields() {
-    $('.editlistitem').each(function() {
-        var self = this;
-        $(this).find('[name]').each(function(){
-            if ( $(self).find('[id="'+this.name+'[trigger]"]').length > 0 ) {
-                YAHOO.util.Event.removeListener(
-                    this.name+'[trigger]',
-                    'click'
-                );
-                Calendar.setup ({
-                    inputField : this.id,
-                    form : "EditListView",
-                    ifFormat : "{/literal}{$dateFormat}{literal}",
-                    daFormat : "{/literal}{$dateFormat}{literal}",
-                    button : this.name+'[trigger]',
-                    singleClick : true,
-                    dateStr : $(this).val(),
-                    startWeekday: 0,
-                    step : 1,
-                    weekNumbers:false
-                });
-            }
+function updateDateFields(item) {
+    var formname = item.closest('form').attr('name');
+    item.find('.date_input').each(function() {
+        Calendar.setup ({
+            inputField : this.id,
+            form : formname,
+            ifFormat : cal_date_format,
+            daFormat : cal_date_format,
+            button : $(this).next('img').attr('id'),
+            singleClick : true,
+            dateStr : $(this).val(),
+            startWeekday: 1,
+            step : 1,
+            weekNumbers:false
         });
     });
 }
 
 function cloneItem(item) {
+    var items_module = item.closest('.multiform').attr('data-itemsmodule');
     var newId = newItemsCount++;
     var localCurrencyFields = [];
     var newItem = $(item.html());
@@ -132,7 +126,7 @@ function cloneItem(item) {
         this.name = this.name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
 
         var fieldName = '';
-        var matches = name.match(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[(.+)\\]'));
+        var matches = name.match(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[([^\\[\\]]+)\\]'));
         if(matches) {
             fieldName = matches[5];
             var validator = findValidator(formname+'_'+items_module, fieldName);
@@ -190,10 +184,13 @@ function cloneItem(item) {
     .data('currencyfields', localCurrencyFields)
     .insertBefore(item)
     .hide().slideDown({duration:200});
-    updateDateFields();
+    updateDateFields(newItem);
     if(typeof lab321 != "undefined" && typeof lab321.sumInWords != "undefined") {
         newItem.find('.sumInWords').removeClass('init');
         lab321.sumInWords.setup();
+    }
+    if(typeof select2_options != 'undefined') {
+        newItem.find('select[multiple]:visible').select2(select2_options)
     }
 }
 
@@ -201,7 +198,7 @@ function findValidator(formname, field) {
     if(typeof validate[formname] == 'undefined')
         return false;
     for (var i = 0; i < validate[formname].length; i++)
-        if (validate[formname][i][nameIndex] == field)
+        if (validate[formname][i][nameIndex] == field || validate[formname][i][nameIndex] == field + '[]')
             return validate[formname][i];
     //TODO: массив валидаторов
     return false;

@@ -3,7 +3,7 @@
  * @author Evgeny Pervushin <pea@lab321.ru>
  *}
 
-<div class="multiform {$items_module} {if $field_defs.mode == 'single'}mode-single{/if}">
+<div class="multiform {$items_module} {if $field_defs.mode == 'single'}mode-single{/if}" data-itemsmodule="{$items_module}">
 
 {literal}
 <style>
@@ -59,7 +59,8 @@
 
 {if $field_defs.mode != 'single'}
 <div class="bottom-links edit">
-    <input type="button" class="add_item" onclick="cloneItem($('#{$items_module}_template'))" value="+ Добавить {sugar_translate label="LBL_OBJECT_NAME" module=$items_module}">
+    <input type="button" class="add_item" onclick="cloneItem($('#{$items_module}_template'))" value=
+        "{if !empty($field_defs.vname_add)}{sugar_translate label=$field_defs.vname_add module=$items_module}{else}Добавить {sugar_translate label="LBL_OBJECT_NAME" module=$items_module}{/if}">
 </div>
 {/if}
 
@@ -82,27 +83,22 @@ set_return = function(popup_reply_data) {
     set_return_orig(popup_reply_data);
 }
 
-var templatePanelId = items_module + "_template";
-SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm != \'undefined\' && typeof validate['"+formname+"'] != \'undefined\' && validate['"+formname+"'].length > 0", function() {
-    updateNames();
-
-    initEditForm();
-
 {/literal}
+SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm != \'undefined\' && typeof validate['"+formname+"'] != \'undefined\' && validate['"+formname+"'].length > 0", function() {ldelim}
+    updateNames("{$items_module}");
+
+    initEditForm("{$items_module}");
+
 {if $field_defs.required}
-{literal}
-    addToValidateCallback(formname, 'multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {
-        return $('.multiform.'+items_module+' .editlistitem').not('.item_template').filter(function(i, v) {
+    addToValidateCallback(formname, 'multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {ldelim}
+        return $('.multiform.'+"{$items_module}"+' .editlistitem').not('.item_template').filter(function(i, v) {ldelim}
             return $(v).find('.item_deleted').length == 0
-        }).length;
+        {rdelim}).length;
     });
-{/literal}
 {/if}
-{literal}
 
-    lab321.multiform[items_module].ready = true;
-});
-{/literal}
+    lab321.multiform["{$items_module}"].ready = true;
+{rdelim});
 </script>
 
 </div>
