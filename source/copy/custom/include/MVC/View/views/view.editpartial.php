@@ -5,6 +5,7 @@
  * @package multiform
  */
 require_once('include/EditView/EditView2.php');
+require_once('custom/include/TemplateHandler/MultiformTemplateHandler.php');
 
 class ViewEditPartial extends SugarView
 {
@@ -20,6 +21,8 @@ class ViewEditPartial extends SugarView
         $this->ev->view = $this->view;
         $this->ev->ss =& $this->ss;
         $this->ev->setup($this->module, $this->bean, $metadataFile, get_custom_file_if_exists('include/EditView/EditView.tpl'));
+        $this->ev->th = new MultiformTemplateHandler();
+        $this->ev->th->ss =& $this->ev->ss;
 
         if(!$metadataFile) {
             $this->ev->defs['templateMeta']['form']['headerTpl'] = 'custom/include/SugarFields/Fields/Multiform/empty.tpl';
@@ -29,9 +32,6 @@ class ViewEditPartial extends SugarView
 
     function display()
     {
-        $this->ev->formName = 'formQuickCreatePartial'; // Для отдельного файла в кэше
-                                                        // Должно содержать QuickCreate не сначала для валидации в TemplateHandler::buildTemplate
-                                                        // См. еще Multiform/EditView.tpl
         $this->ev->process();
         echo $this->ev->display($this->showTitle);
     }
