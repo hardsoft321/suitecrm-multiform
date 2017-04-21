@@ -8,7 +8,7 @@ $manifest = array(
     'is_uninstallable' => true,
     'published_date' => '2017-01-13',
     'type' => 'module',
-    'version' => '1.2.0',
+    'version' => '1.2.1',
 );
 $installdefs = array(
     'id' => 'multiform',

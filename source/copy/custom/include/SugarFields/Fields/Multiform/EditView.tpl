@@ -75,13 +75,13 @@ if(!lab321) var lab321 = {};
 if(!lab321.multiform) lab321.multiform = {};
 lab321.multiform[items_module] = {};
 
-var set_return_orig = set_return; //TODO: выводить item форму с правильным form_name в open_popup
-set_return = function(popup_reply_data) {
-    if(popup_reply_data.form_name == 'EditView') {
-        popup_reply_data.form_name = formname;
-    }
-    set_return_orig(popup_reply_data);
-}
+// var set_return_orig = set_return; //TODO: выводить item форму с правильным form_name в open_popup
+// set_return = function(popup_reply_data) {
+//     if(popup_reply_data.form_name == 'EditView') {
+//         popup_reply_data.form_name = formname;
+//     }
+//     set_return_orig(popup_reply_data);
+// }
 
 {/literal}
 SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm != \'undefined\' && typeof validate['"+formname+"'] != \'undefined\' && validate['"+formname+"'].length > 0", function() {ldelim}
