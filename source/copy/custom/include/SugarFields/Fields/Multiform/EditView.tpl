@@ -19,7 +19,7 @@
 {/literal}
 
 {* Для отображения ошибок валидации *}
-<div class="multiform_validation"><input type="hidden" name="multiform_validation" value="1" /></div>
+<div class="multiform_validation"><input type="hidden" name="{$items_module}_multiform_validation" value="1" /></div>
 
 {foreach from=$forms key="bean_id" item="item"}
 <div class="editlistitem {if !empty($item.bean_id)}bean-id{else}bean-new{/if}">
@@ -90,7 +90,7 @@ SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm !=
     initEditForm("{$items_module}");
 
 {if $field_defs.required}
-    addToValidateCallback(formname, 'multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {ldelim}
+    addToValidateCallback(formname, '{$items_module}_multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {ldelim}
         return $('.multiform.'+"{$items_module}"+' .editlistitem').not('.item_template').filter(function(i, v) {ldelim}
             return $(v).find('.item_deleted').length == 0
         {rdelim}).length;
