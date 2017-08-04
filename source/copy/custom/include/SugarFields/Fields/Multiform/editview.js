@@ -94,12 +94,15 @@ function updateNames(items_module) {
             $(this).attr('data-relate', items_module+'['+beanId+']['+$(this).attr('data-relate')+']');
         }).end()
         .data('currencyfields', localCurrencyFields)
+        updateDateFields($(this));
     })
 }
 
 function updateDateFields(item) {
     var formname = item.closest('form').attr('name');
     item.find('.date_input').each(function() {
+    var a = document.getElementById(this.id);
+      if (a) {
         Calendar.setup ({
             inputField : this.id,
             form : formname,
@@ -112,6 +115,7 @@ function updateDateFields(item) {
             step : 1,
             weekNumbers:false
         });
+      }
     });
 }
 
