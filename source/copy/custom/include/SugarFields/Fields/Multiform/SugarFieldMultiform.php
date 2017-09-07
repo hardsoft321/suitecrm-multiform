@@ -49,7 +49,13 @@ class SugarFieldMultiform
         $beans = $parentBean->{$parentBean->field_defs[$field]['link']}->getBeans();
         if(!empty($beans)) {
             $b = reset($beans);
-            if(!empty($b->date_entered)) {
+            if(!empty($parentBean->field_defs[$field]['sortingField'])) {
+                $sortingField = $parentBean->field_defs[$field]['sortingField'];
+                usort($beans, function($bean1, $bean2) use ($sortingField) {
+                    return strcmp($bean1->$sortingField, $bean2->$sortingField);
+                });
+            }
+            elseif(!empty($b->date_entered)) {
                 usort($beans, 'SugarFieldMultiform::compareBeansByDateEntered');
             }
             elseif(!empty($b->date_modified)) {
@@ -360,14 +366,19 @@ class SugarFieldMultiform
     public static function getDetailHtml($itemBeans)
     {
         $str = '';
-        $str .= '<style>.view tr td table tr td {padding: 5px 6px 5px 6px}</style>';
+        $str .= '<style>
+.view tr td table tr td {padding: 5px 6px 5px 6px}
+.detaillistitem .view {margin: 0; border-bottom-width: 0}
+</style>';
         foreach($itemBeans as $bean) {
             $view = ViewFactory::loadView('detailpartial', $bean->module_name, $bean);
             $view->init($bean);
             $view->module = $bean->module_name;
             $view->preDisplay();
             ob_start();
+            echo '<div class="detaillistitem">';
             $view->display();
+            echo '</div>';
             $str .= ob_get_clean();
         }
         return $str;

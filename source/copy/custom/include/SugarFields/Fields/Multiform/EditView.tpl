@@ -3,18 +3,24 @@
  * @author Evgeny Pervushin <pea@lab321.ru>
  *}
 
-<div class="multiform {$items_module} {if $field_defs.mode == 'single'}mode-single{/if}" data-itemsmodule="{$items_module}">
+<div class="multiform {$items_module} {if $field_defs.mode == 'single'}mode-single{/if}"
+  data-itemsmodule="{$items_module}"
+  data-sortingfield="{$field_defs.sortingField}"
+>
 
 {literal}
 <style>
 .item_template {display: none;}
 .item-buttons{text-align:right; padding: 3px 0;float:right;
     top: 20px; position: relative;}
-.del-message {color: red;}
-.bottom-links {margin-top: 10px;}
+.del-message {color: red; margin-bottom: 7px;}
+.bottom-links {margin-top: 13px;}
 .edit tr td .multiform table.edit.view tr td {padding: 3px !important;}
-.edit tr td .multiform table.edit.view {padding-top: 20px !important;}
+.edit tr td .multiform table.edit.view {padding-top: 20px !important; padding-bottom: 20px !important;}
+.editlistitem > .item-fields, .editlistitem > #EditView_tabs {margin-top: -24px;}
+.multiform_validation > .required {margin-bottom: 7px;}
 .edit tr td .multiform.mode-single .bean-new table.edit.view {padding-top: 3px !important;}
+.multiform {top: -5px; position: relative;}
 </style>
 {/literal}
 
@@ -22,11 +28,10 @@
 <div class="multiform_validation"><input type="hidden" name="{$items_module}_multiform_validation" value="1" /></div>
 
 {foreach from=$forms key="bean_id" item="item"}
-<div class="editlistitem {if !empty($item.bean_id)}bean-id{else}bean-new{/if}">
+<div class="editlistitem {if !empty($item.bean_id)}bean-id{else}bean-new{/if}" data-itemkey="{$item.key}">
     {if !empty($item.bean_id)}
     <input type="hidden" name="item_record" class="item_record" value="{$item.bean_id}">
     {/if}
-    <input type="hidden" name="item_key" class="item_key" value="{$item.key}">
     <div class="item-buttons">
         {if !empty($item.bean_id)}
         {if $is_admin}
@@ -58,7 +63,7 @@
 </div>
 
 {if $field_defs.mode != 'single'}
-<div class="bottom-links edit">
+<div class="bottom-links editform">
     <input type="button" class="add_item" onclick="cloneItem($('#{$items_module}_template'))" value=
         "{if !empty($field_defs.vname_add)}{sugar_translate label=$field_defs.vname_add module=$items_module}{else}Добавить {sugar_translate label="LBL_OBJECT_NAME" module=$items_module}{/if}">
 </div>
@@ -95,6 +100,23 @@ SUGAR.util.doWhen("document.readyState == \'complete\' && typeof initEditForm !=
             return $(v).find('.item_deleted').length == 0
         {rdelim}).length;
     });
+{/if}
+
+{if $field_defs.sortingField}
+    {* sortable перезапускает скрипты - валидация ломается - убираем их *}
+    $('.multiform.{$items_module} .editlistitem script').remove()
+
+    $('.multiform.{$items_module}').sortable({ldelim}
+        items: ".editlistitem"
+        , cursor: "move"
+        , axis: "y"
+    {rdelim})
+    .disableSelection()
+    .on('sortstop', function(event, ui) {ldelim}
+        updateSorting('{$items_module}');
+    {rdelim})
+
+    updateSorting('{$items_module}');
 {/if}
 
     lab321.multiform["{$items_module}"].ready = true;

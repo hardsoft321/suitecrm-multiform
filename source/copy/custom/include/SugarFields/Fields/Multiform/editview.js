@@ -39,7 +39,7 @@ function deleteItem(item) {
 function updateNames(items_module) {
     $('.editlistitem', '.multiform.'+items_module).each(function() {
         var self = this;
-        var beanId = $(this).find('[name="item_key"]').val() || 'template';
+        var beanId = $(this).attr('data-itemkey') || 'template';
         var hasLocalCurrencySelect = $(this).find('#currency_id_span').length > 0;
         var localCurrencyFields = [];
         $(this).find('[name]').each(function() {
@@ -49,9 +49,9 @@ function updateNames(items_module) {
             this.id = this.name;
 
             if(beanId != 'template') {
-                var validator = findValidator(formname+'_'+items_module, name);
-                if(validator) {
-                    var newValidator = $.extend({}, validator);
+                var validators = findValidators(formname+'_'+items_module, name);
+                for(var i in validators) {
+                    var newValidator = $.extend({}, validators[i]);
                     newValidator[nameIndex] = this.name;
                     validate[formname][validate[formname].length] = newValidator;
                 }
@@ -125,6 +125,7 @@ function cloneItem(item) {
     var localCurrencyFields = [];
     var newItem = $(item.html());
     newItem.removeClass('item_template')
+    .attr('data-itemkey', 'new'+newId)
     .find('[name]').each(function() {
         var name = this.name;
         this.name = this.name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
@@ -133,9 +134,9 @@ function cloneItem(item) {
         var matches = name.match(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[([^\\[\\]]+)\\]'));
         if(matches) {
             fieldName = matches[5];
-            var validator = findValidator(formname+'_'+items_module, fieldName);
-            if(validator) {
-                var newValidator = $.extend({}, validator);
+            var validators = findValidators(formname+'_'+items_module, fieldName);
+            for(var i in validators) {
+                var newValidator = $.extend({}, validators[i]);
                 newValidator[nameIndex] = this.name;
                 validate[formname][validate[formname].length] = newValidator;
             }
@@ -187,7 +188,7 @@ function cloneItem(item) {
     .end()
     .data('currencyfields', localCurrencyFields)
     .insertBefore(item)
-    .hide().slideDown({duration:200});
+    .hide().slideDown({duration:0});
     updateDateFields(newItem);
     if(typeof lab321 != "undefined" && typeof lab321.sumInWords != "undefined") {
         newItem.find('.sumInWords').removeClass('init');
@@ -196,16 +197,34 @@ function cloneItem(item) {
     if(typeof select2_options != 'undefined') {
         newItem.find('select[multiple]:visible').select2(select2_options)
     }
+    updateSorting(items_module);
 }
 
-function findValidator(formname, field) {
+function updateSorting(items_module) {
+    var sorting = 0;
+    var sortingField = $('.multiform.'+items_module).attr('data-sortingfield');
+    if(!sortingField)
+        return;
+    $('.multiform.'+items_module+' > .editlistitem').each(function() {
+        sorting += 10;
+        var field = $(this).find('[name$=\\['+sortingField+'\\]]');
+        if(!field.length) {
+            var beanId = $(this).attr('data-itemkey') || 'template';
+            var name = items_module+'['+beanId+']['+sortingField+']';
+            field = $('<input type="hidden" name="'+name+'">').appendTo(this)
+        }
+        field.val(sorting);
+    })
+}
+
+function findValidators(formname, field) {
     if(typeof validate[formname] == 'undefined')
-        return false;
+        return [];
+    var validators = [];
     for (var i = 0; i < validate[formname].length; i++)
         if (validate[formname][i][nameIndex] == field || validate[formname][i][nameIndex] == field + '[]')
-            return validate[formname][i];
-    //TODO: массив валидаторов
-    return false;
+            validators.push(validate[formname][i]);
+    return validators;
 }
 
 function CurrencyConvertLocal(form, currencyField, localCurrencyFields){

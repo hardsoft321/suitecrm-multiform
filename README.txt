@@ -16,6 +16,7 @@ $dictionary['Opportunity']['fields']['OpportunityProductsField'] = array(
     // 'editview' => 'quickcreatepartial', //<- кастомный эдит вью
                                            // По умолчанию, editpartialviewdefs.php
                                            // Если его нет, берется editviewdefs.php и убирается шапка и футер.
+    // 'sortingField' => 'sorting', // поле для заполнения сортировки (тип int)
     'type' => 'function',
     'source' => 'non-db',
     'massupdate' => 0,
@@ -35,17 +36,32 @@ $dictionary['Opportunity']['fields']['OpportunityProductsField'] = array(
 
 Пример сохранения:
 
-if(isset($_POST['OpportunityProducts'])) {
+$itemsModule = 'OpportunityProducts';
+$fieldName = 'OpportunityProductsField';
+if(isset($_POST[$itemsModule])) {
     require_once 'custom/include/SugarFields/Fields/Multiform/SugarFieldMultiform.php';
     $field = new SugarFieldMultiform;
-    $products = $field->save($opp, 'OpportunityProductsField');
+    $itemBeans = $field->save($opp, $fieldName);
 }
 
+Пример удаления:
+public function mark_deleted($id)
+{
+    $link = 'products';
+    $bean = BeanFactory::getBean($this->module_name, $id);
+    $bean->load_relationship($link);
+    $children = $bean->$link->getBeans();
+    parent::mark_deleted($id);
+    foreach($children as $child) {
+        $child->mark_deleted($child->id);
+    }
+}
 
 Пример ACLAccess:
 
 public function ACLAccess($view, $is_owner = 'not_set')
 {
+    $linkName = 'opportunities';
     require_once 'custom/include/SugarFields/Fields/Multiform/SugarFieldMultiform.php';
-    return SugarFieldMultiform::ACLAccessLikeParent($this, 'opportunities', $view);
+    return SugarFieldMultiform::ACLAccessLikeParent($this, $linkName, $view);
 }
