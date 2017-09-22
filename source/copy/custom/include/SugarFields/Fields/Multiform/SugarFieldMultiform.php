@@ -52,7 +52,7 @@ class SugarFieldMultiform
             if(!empty($parentBean->field_defs[$field]['sortingField'])) {
                 $sortingField = $parentBean->field_defs[$field]['sortingField'];
                 usort($beans, function($bean1, $bean2) use ($sortingField) {
-                    return strcmp($bean1->$sortingField, $bean2->$sortingField);
+                    return strnatcmp($bean1->$sortingField, $bean2->$sortingField);
                 });
             }
             elseif(!empty($b->date_entered)) {
