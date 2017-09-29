@@ -21,7 +21,7 @@ class ViewEditPartial extends SugarView
         $this->ev->view = $this->view;
         $this->ev->ss =& $this->ss;
         $this->ev->setup($this->module, $this->bean, $metadataFile, get_custom_file_if_exists('include/EditView/EditView.tpl'));
-        $this->ev->th = new MultiformTemplateHandler();
+        $this->ev->th = new MultiformTemplateHandler($this->type);
         $this->ev->th->ss =& $this->ev->ss;
 
         if(!$metadataFile) {
