@@ -81,10 +81,13 @@ class SugarFieldMultiform
 
     protected static function getEditHtml($itemBeans, $formName, $field_defs)
     {
+        $itemsModule = $field_defs['module'];
+        if(!ACLController::checkAccess($itemsModule, 'edit', true)) {
+            return '';
+        }
         $ss = new Sugar_Smarty();
         $forms = array();
         $isDuplicate = isset($_REQUEST['isDuplicate']) && $_REQUEST['isDuplicate'] == "true";
-        $itemsModule = $field_defs['module'];
         $count = 0;
         //существующие записи
         foreach($itemBeans as $bean) {
