@@ -82,9 +82,6 @@ class SugarFieldMultiform
     protected static function getEditHtml($itemBeans, $formName, $field_defs)
     {
         $itemsModule = $field_defs['module'];
-        if(!ACLController::checkAccess($itemsModule, 'edit', true)) {
-            return '';
-        }
         $ss = new Sugar_Smarty();
         $forms = array();
         $isDuplicate = isset($_REQUEST['isDuplicate']) && $_REQUEST['isDuplicate'] == "true";
@@ -190,6 +187,9 @@ class SugarFieldMultiform
             return array();
         }
         $itemParentIdKey = $GLOBALS['dictionary'][$object]['relationships'][$relName]['rhs_key'];
+        $itemParentTypeKey = (isset($GLOBALS['dictionary'][$object]['relationships'][$relName]['relationship_role_column']) &&
+                             isset($GLOBALS['dictionary'][$object]['relationships'][$relName]['relationship_role_column_value'])) ?
+                                   $GLOBALS['dictionary'][$object]['relationships'][$relName]['relationship_role_column'] : '';
 
         $controller = ControllerFactory::getController($itemsModule);
         $controller->parentBean = $parentBean;
@@ -214,6 +214,8 @@ class SugarFieldMultiform
             }
             $_POST = array_merge($origPost, $itemPost);
             $_POST[$itemParentIdKey] = $parentBean->id;
+            if (!empty($itemParentTypeKey))
+                $_POST[$itemParentTypeKey] = $GLOBALS['dictionary'][$object]['relationships'][$relName]['relationship_role_column_value'];
             $controller->bean->parent_beans = array($parentBean);
             $controller->bean->parentAclChecked = true;
 

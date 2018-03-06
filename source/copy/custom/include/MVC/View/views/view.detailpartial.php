@@ -5,6 +5,7 @@
  * @package multiform
  */
 require_once('include/DetailView/DetailView2.php');
+require_once('custom/include/TemplateHandler/MultiformTemplateHandler.php');
 
 class ViewDetailPartial extends SugarView
 {
@@ -23,6 +24,8 @@ class ViewDetailPartial extends SugarView
         $this->dv = new DetailView2();
         $this->dv->ss =&  $this->ss;
         $this->dv->setup($this->module, $this->bean, $metadataFile, get_custom_file_if_exists('include/DetailView/DetailView.tpl'));
+        $this->dv->th = new MultiformTemplateHandler($this->type);
+        $this->dv->th->ss = $this->dv->ss;
     }
 
     function display()
