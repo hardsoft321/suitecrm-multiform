@@ -3,11 +3,8 @@
  * @author Evgeny Pervushin <pea@lab321.ru>
  */
 
-function initEditForm(items_module) {
+function initEditForm(items_module, formname) {
     var templatePanelId = items_module + "_template";
-    if(!$('form[name="'+formname+'"]').length) {
-        formname = $('#'+templatePanelId).closest('form').attr('name') || 'EditView';
-    }
     $('#'+templatePanelId).find('script').remove();
     var init = false;
     var initEditView_orig = initEditView;
@@ -23,39 +20,37 @@ function initEditForm(items_module) {
 }
 
 function deleteItem(item) {
-    var items_module = item.closest('.multiform').attr('data-itemsmodule');
-    var beanId = item.find('.item_record').val();
+    var beanId = item.children('.item_record').val();
     if(!beanId) {
         item.remove();
         return;
     }
+    var fullName = buildMultiformName(item, '['+beanId+']');
     item
     .find('.item-fields, .item-buttons').remove().end()
-    .append($('<input type="hidden" class="item_deleted" name="'+items_module+'['+beanId+'][item_deleted]" value="1">'))
+    .append($('<input type="hidden" class="item_deleted" name="'+fullName+'[item_deleted]" value="1">'))
     .append($('<p class="del-message">').text('Запись будет удалена при сохранении формы.'))
 }
 
 //TODO: code duplication
-function updateNames(items_module) {
-    $('.editlistitem', '.multiform.'+items_module).each(function() {
+function updateNames(items_module, formname) {
+    formname = $('#'+items_module + '_template').closest('form').attr('name') || formname;
+    $('.multiform.'+items_module+' > .editlistitem, .multiform.'+items_module+' > .item_template > .editlistitem').each(function() {
         var self = this;
         var beanId = $(this).attr('data-itemkey') || 'template';
         var hasLocalCurrencySelect = $(this).find('#currency_id_span').length > 0;
         var localCurrencyFields = [];
-        $(this).find('[name]').each(function() {
+        $(this).find('[name]').not('[data-nameupdated]').each(function() {
+            $(this).attr('data-nameupdated', 'true')
             var isMultiselect = this.name.slice(-2) == '[]';
             var name = isMultiselect ? this.name.slice(0, this.name.length - 2) : this.name;
-            this.name = items_module+'['+beanId+']['+name+']' + (isMultiselect ? '[]' : '');
+            var fullName = buildMultiformName($(this), '['+name+']');
+            this.name = fullName + (isMultiselect ? '[]' : '');
             this.id = this.name;
 
-            if(beanId != 'template') {
-                var validators = findValidators(formname+'_'+items_module, name);
-                for(var i in validators) {
-                    var newValidator = $.extend({}, validators[i]);
-                    newValidator[nameIndex] = this.name;
-                    validate[formname][validate[formname].length] = newValidator;
-                }
-            }
+            var form1 = 'EditView_'+items_module;
+            var isTemplate2 = $(this).closest('.item_template').length > 0;
+            copyValidators(form1, name, (isTemplate2 ? '_template--' : '') + formname, fullName);
 
             if ( $(self).find('[id="'+name+'_trigger"]').length > 0 ) {
                 $(self).find('[id="'+name+'_trigger"]')[0].id =
@@ -89,13 +84,49 @@ function updateNames(items_module) {
                     }
                 }
             }
-        }).end()
+        })
+        $(this)
         .find('[data-relate]').each(function(){ //для поля SumInWords
             $(this).attr('data-relate', items_module+'['+beanId+']['+$(this).attr('data-relate')+']');
         }).end()
         .data('currencyfields', localCurrencyFields)
         updateDateFields($(this));
     })
+
+    $('.multiform.'+items_module+' > .multiform_validation > input[type="hidden"]').not('[data-nameupdated]').each(function() {
+        $(this).attr('data-nameupdated', 'true');
+        var name = this.name;
+        var fullName = buildMultiformName($(this).closest('.multiform'), '');
+        fullName = fullName ? fullName + '[' + name + ']' : name;
+        this.name = fullName;
+        var isTemplate2 = $(this).closest('.item_template').length > 0;
+        copyValidators(formname, name, (isTemplate2 ? '_template--' : '') + formname, fullName);
+        if (formname != 'EditView') {
+            copyValidators('EditView', name, (isTemplate2 ? '_template--' : '') + formname, fullName);
+        }
+    });
+}
+
+function addToValidateMultiformRequired(items_module, formname) {
+    addToValidateCallback(formname, items_module + '_multiform_validation', '', false, 'Необходимо добавить хотя бы одну запись', function(formname, name) {
+        return $(document.forms[formname].elements[name]).closest('.multiform').children('.editlistitem').not('.item_template').filter(function(i, v) {
+            return $(v).children('.item_deleted').length == 0
+        }).length;
+    });
+}
+
+function buildMultiformName(elem, name) {
+    var names = elem.parents('.editlistitem, .multiform').map(function() {
+        var el = $(this);
+        if (el.hasClass('editlistitem')) {
+            return el.attr('data-itemkey') || 'template';
+        }
+        if (el.hasClass('multiform')) {
+            return el.attr('data-itemsmodule');
+        }
+        return '';
+    }).get().reverse();
+    return (names[0] || '') + $.map(names.slice(1), function(name) {return '['+name+']'}).join('') + name;
 }
 
 function updateDateFields(item) {
@@ -120,27 +151,27 @@ function updateDateFields(item) {
 }
 
 function cloneItem(item) {
+    var func_for_add_ch_f = '';//
+    var add_ch_f = '';//Переменные используется для определения поля с обработчиком события при создании нового экземпляра тимплейта
     var items_module = item.closest('.multiform').attr('data-itemsmodule');
     var newId = newItemsCount++;
     var localCurrencyFields = [];
+    var formname = $(item).closest('form').attr('name') || 'EditView';
     var newItem = $(item.html());
     newItem.removeClass('item_template')
     .attr('data-itemkey', 'new'+newId)
     .find('[name]').each(function() {
         var name = this.name;
         this.name = this.name.replace(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), items_module+'[new'+newId+']');
-
+        this.name = this.name.replace(new RegExp('\\['+items_module+'\\]'+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]'), '['+items_module+']'+'[new'+newId+']');
         var fieldName = '';
         var matches = name.match(new RegExp(items_module+'\\[((new[0-9]+)|(template)|([a-f0-9\-]{36}))\\]\\[([^\\[\\]]+)\\]'));
         if(matches) {
             fieldName = matches[5];
-            var validators = findValidators(formname+'_'+items_module, fieldName);
-            for(var i in validators) {
-                var newValidator = $.extend({}, validators[i]);
-                newValidator[nameIndex] = this.name;
-                validate[formname][validate[formname].length] = newValidator;
-            }
         }
+        var isTemplate2 = $(this).closest('.item_template').length > 0;
+        copyValidators(formname, name, (isTemplate2 ? '_template--' : '') + formname, this.name);
+        copyValidators('_template--' + formname, name, (isTemplate2 ? '_template--' : '') + formname, this.name);
 
         this.id = this.name;
         if ( newItem.find('[id="'+name+'[trigger]"]').length > 0 ) {
@@ -172,6 +203,12 @@ function cloneItem(item) {
                 //currencyFields.push(this.name);
                 localCurrencyFields.push(this.name);
             }
+            //При клонировании тимплейта, при наличии у элемента данного атрибута, дальше по коду навешивается change с функцией, указанной в атрибуте
+            var addLisen = $(this).attr('addtochangeevent');
+            if(addLisen){
+                add_ch_f = $(this).attr('name');
+                func_for_add_ch_f = addLisen;
+            }
         //}
         //if(typeof currencyFields !== 'undefined' && currencyFields.indexOf(name) >= 0) {
         //    currencyFields.push(this.name);
@@ -197,6 +234,10 @@ function cloneItem(item) {
     if(typeof select2_options != 'undefined') {
         newItem.find('select[multiple]:visible').select2(select2_options)
     }
+    if(add_ch_f){
+        function fn(e) {var func_name = $(e).attr('name'); eval(func_for_add_ch_f+'(func_name);')}
+        YAHOO.util.Event.addListener(add_ch_f.toString(), 'change', fn, $('[name="'+add_ch_f+'"]'), false);
+    }
     updateSorting(items_module);
 }
 
@@ -210,11 +251,23 @@ function updateSorting(items_module) {
         var field = $(this).find('[name$=\\['+sortingField+'\\]]');
         if(!field.length) {
             var beanId = $(this).attr('data-itemkey') || 'template';
-            var name = items_module+'['+beanId+']['+sortingField+']';
-            field = $('<input type="hidden" name="'+name+'">').appendTo(this)
+            var fullName = buildMultiformName($(this), '['+beanId+']['+sortingField+']');
+            field = $('<input type="hidden" name="'+fullName+'" data-nameupdated="true">').appendTo(this)
         }
         field.val(sorting);
     })
+}
+
+function copyValidators(form1, name1, form2, name2) {
+    var validators = findValidators(form1, name1);
+    for(var i in validators) {
+        var newValidator = $.extend({}, validators[i]);
+        newValidator[nameIndex] = name2;
+        if (!validate[form2]) {
+            validate[form2] = [];
+        }
+        validate[form2][validate[form2].length] = newValidator;
+    }
 }
 
 function findValidators(formname, field) {

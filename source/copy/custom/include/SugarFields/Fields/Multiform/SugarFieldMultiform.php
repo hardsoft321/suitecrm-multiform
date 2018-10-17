@@ -27,9 +27,9 @@ class SugarFieldMultiform
             return self::getEditHtml($itemBeans, $formName, $parentBean->field_defs[$field]);
         }
         if($view == 'DetailView') {
-            $formName = $view == 'EditView' ? 'EditView' : 'form_SubpanelQuickCreate_'.$parentBean->module_name;
+            $formName = 'DetailView';
             $itemBeans = self::getBeans($parentBean, $field);
-            return self::getDetailHtml($itemBeans);
+            return self::getDetailHtml($itemBeans, $formName, $parentBean->field_defs[$field]);
         }
         return '';
     }
@@ -71,7 +71,11 @@ class SugarFieldMultiform
 
     public static function compareBeansByDateEntered($bean1, $bean2)
     {
-        return strcmp($bean1->fetched_row['date_entered'], $bean2->fetched_row['date_entered']);
+        $sort1 = strcmp($bean1->fetched_row['date_entered'], $bean2->fetched_row['date_entered']);
+        if ($sort1 || empty($bean1->fetched_row['id'])) {
+            return $sort1;
+        }
+        return strcmp($bean1->fetched_row['id'], $bean2->fetched_row['id']);
     }
 
     public static function compareBeansByDateModified($bean1, $bean2)
@@ -82,6 +86,7 @@ class SugarFieldMultiform
     protected static function getEditHtml($itemBeans, $formName, $field_defs)
     {
         $itemsModule = $field_defs['module'];
+        $formItemsModule = !empty($field_defs['form_module']) ? $field_defs['form_module'] : $field_defs['module'];
         $ss = new Sugar_Smarty();
         $forms = array();
         $isDuplicate = isset($_REQUEST['isDuplicate']) && $_REQUEST['isDuplicate'] == "true";
@@ -104,8 +109,8 @@ class SugarFieldMultiform
         $origPost = isset($_POST) ? $_POST : array();
         $origRequest = isset($_REQUEST) ? $_REQUEST : array();
         // Заполнение при переходе в полную форму из формы быстрого создания
-        if(!empty($_REQUEST[$itemsModule])) {
-            $itemsPost = $_REQUEST[$itemsModule];
+        if(!empty($_REQUEST[$formItemsModule])) {
+            $itemsPost = $_REQUEST[$formItemsModule];
             $controller = ControllerFactory::getController($itemsModule);
             foreach($itemsPost as $id => $itemPost) {
                 if($id == 'template') {
@@ -119,6 +124,7 @@ class SugarFieldMultiform
 
                 $controller->bean = BeanFactory::newBean($itemsModule);
                 $controller->bean->parentAclChecked = true;
+                $controller->bean->edit_view_pre_save = true;
                 $controller->pre_save();
                 $controller->bean->id = '';
 
@@ -164,6 +170,7 @@ class SugarFieldMultiform
         $ss->assign('form_template', $template_html);
         $ss->assign('is_admin', $GLOBALS['current_user']->isAdmin());
         $ss->assign('items_module', $itemsModule);
+        $ss->assign('form_items_module', $formItemsModule);
         $ss->assign('field_defs', $field_defs);
         $ss->assign('isAuditEnabled', $bean->is_AuditEnabled());
         return $ss->fetch('custom/include/SugarFields/Fields/Multiform/EditView.tpl');
@@ -176,6 +183,13 @@ class SugarFieldMultiform
             return array();
         }
         $itemsModule = $parentBean->field_defs[$field]['module'];
+        $formItemsModule = !empty($parentBean->field_defs[$field]['form_module'])
+            ? $parentBean->field_defs[$field]['form_module']
+            : $parentBean->field_defs[$field]['module'];
+
+        if (!isset($_POST[$formItemsModule])) {
+            return array();
+        }
 
         $object = BeanFactory::getObjectName($parentBean->module_name);
         $linkName = $parentBean->field_defs[$field]['link'];
@@ -194,8 +208,9 @@ class SugarFieldMultiform
         $controller = ControllerFactory::getController($itemsModule);
         $controller->parentBean = $parentBean;
 
+        $itemsPost = $_POST[$formItemsModule];
+        $_POST[$formItemsModule] = array();
         $origPost = $_POST;
-        $itemsPost = $_POST[$itemsModule];
         $beans = array();
 
         foreach($itemsPost as $id => $itemPost) {
@@ -240,7 +255,16 @@ class SugarFieldMultiform
             }
         }
         $_POST = $origPost;
+        $_POST[$formItemsModule.'--processed'] = $itemsPost;
         return $beans;
+    }
+
+    public function mark_deleted($parentBean, $field)
+    {
+        $itemBeans = self::getBeans($parentBean, $field);
+        foreach ($itemBeans as $bean) {
+            $bean->mark_deleted($bean->id);
+        }
     }
 
     function ACLAccessLikeParent($itemBean, $parentLink, $view)
@@ -368,7 +392,7 @@ class SugarFieldMultiform
         return $parentBean->ACLAccess($view, $is_owner, $in_group);
     }
 
-    public static function getDetailHtml($itemBeans)
+    public static function getDetailHtml($itemBeans, $formName, $field_defs)
     {
         $str = '';
         $str .= '<style>
@@ -376,7 +400,8 @@ class SugarFieldMultiform
 .detaillistitem .view {margin: 0; border-bottom-width: 0}
 </style>';
         foreach($itemBeans as $bean) {
-            $view = ViewFactory::loadView('detailpartial', $bean->module_name, $bean);
+            $viewType = !empty($field_defs['detailview']) ? $field_defs['detailview'] : 'detailpartial';
+            $view = ViewFactory::loadView($viewType, $bean->module_name, $bean);
             $view->init($bean);
             $view->module = $bean->module_name;
             $view->preDisplay();
